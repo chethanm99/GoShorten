@@ -29,7 +29,6 @@ Thumbs.db
 response.json
 
 .env
-.env.example
 
 .data/
 *.log
