@@ -1,0 +1,35 @@
+# Binaries
+*.exe
+*.test
+*.prof
+*.out
+*.o
+
+# Ignore any built binary 
+main
+api/main
+
+# Local configuration and secrets
+.env
+*.env
+
+# Dependency directories (Go mod cache shouldn’t be committed)
+vendor/
+
+# IDE and editor configs
+.idea/
+.vscode/
+*.swp
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Example of temporary files
+response.json
+
+.env
+.env.example
+
+.data/
+*.log
