@@ -4,19 +4,19 @@
 FROM golang:alpine AS builder
 
 # Set working directory inside the container
-WORKDIR /app
+WORKDIR /src
 
 # Copy go.mod and go.sum first (to leverage Docker layer caching)
-COPY go.mod go.sum ./
+COPY app/go.mod app/go.sum ./
 
 # Download Go dependencies
 RUN go mod download
 
 # Copy the rest of the source code
-COPY . .
+COPY app/ .
 
 # Build the Go binary (output to /build/main)
-RUN go build -o /build/main .
+RUN go build -o /build/main ./..
 
 # -------------------------
 # Stage 2: Final image

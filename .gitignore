@@ -32,3 +32,7 @@ response.json
 
 .data/
 *.log
+
+/app/vendor/
+/app/bin/
+/app/build/

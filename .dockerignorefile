@@ -1,3 +1,7 @@
 .data
 .data/
 appendonlydir/
+
+/app/vendor/
+/app/bin/
+/app/build/
