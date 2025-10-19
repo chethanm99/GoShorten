@@ -23,6 +23,8 @@ RUN go build -o /build/main .
 # -------------------------
 FROM alpine:latest
 
+RUN apk update && apk add --no-cache ca-certificates
+
 # Create a non-root user for security
 RUN addgroup -S appgroup && adduser -S -G appgroup appuser
 
@@ -35,11 +37,12 @@ WORKDIR /app
 # Switch to the non-root user
 USER appuser
 
-# Copy environment file if your app needs it
-COPY .env .env
-
 # Expose the application port
 EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget -q -O /dev/null http://localhost:8080/health || exit 1
 
 # Start the application
 CMD ["/app/main"]
