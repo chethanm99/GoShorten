@@ -16,24 +16,24 @@ RUN go mod download
 COPY app/ .
 
 # Build the Go binary (output to /build/main)
-RUN go build -o /build/main ./..
+RUN go build -o /build/main .
 
 # -------------------------
 # Stage 2: Final image
 # -------------------------
-FROM alpine
+FROM alpine:latest
 
 # Create a non-root user for security
-RUN adduser -S -D -H appuser
-
-# Switch to the non-root user
-USER appuser
+RUN addgroup -S appgroup && adduser -S -G appgroup appuser
 
 # Copy the compiled binary from builder stage
-COPY --from=builder /build/main /app/main
+COPY --from=builder --chown=appuser:appgroup /build/main /app/main
 
 # Set working directory
 WORKDIR /app
+
+# Switch to the non-root user
+USER appuser
 
 # Copy environment file if your app needs it
 COPY .env .env
