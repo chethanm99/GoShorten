@@ -14,6 +14,13 @@ var (
 )
 
 func Connect() error {
+	if RDB != nil {
+		if _, err := RDB.Ping(Ctx).Result(); err != nil {
+			return fmt.Errorf("redis connection failed: %w", err)
+		}
+		return nil
+	}
+
 	RDB = redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("DB_ADDR"),
 		Password: os.Getenv("DB_PASS"),
