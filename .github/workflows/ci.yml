@@ -51,12 +51,23 @@ jobs:
         id: trivy_scan
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-          trivy image --format json --output trivy-results.json --severity CRITICAL,HIGH "${{ env.IMAGE_NAME }}:${{ github.sha }}" || true
-          trivy image --format sarif --output trivy-results.sarif --severity CRITICAL,HIGH "${{ env.IMAGE_NAME }}:${{ github.sha }}" || true
-          if jq -e '.Results[]?.Vulnerabilities | select(.!=null) | .[] | select(.Severity=="CRITICAL" or .Severity=="HIGH")' trivy-results.json >/dev/null 2>&1; then
-            echo "vuln_found=true" >> $GITHUB_OUTPUT
-          else
-            echo "vuln_found=false" >> $GITHUB_OUTPUT
+          IMAGE_REF="${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+          /usr/local/bin/trivy image \
+            --format sarif \
+            --output trivy-results.sarif \
+            --severity CRITICAL,HIGH \
+            "${IMAGE_REF}" || true
+
+          /usr/local/bin/trivy image \
+            --format json \
+            --output trivy-results.json \
+            --severity CRITICAL,HIGH \
+            "${IMAGE_REF}" || true
+
+          if jq -e '...' trivy-results.json >/dev/null 2>&1; then
+            echo"::error:CRITICAL or HIGH vulnerabilities found. Failing quality gate."
+            exit 1
           fi
 
       - name: Publish SARIF to Github Code Scanning
