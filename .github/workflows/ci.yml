@@ -40,23 +40,43 @@ jobs:
         run: |
           if [ -f .env.example ]; then cp .env.example .env; fi
 
-      - name: Build Docker image
-        run: docker build -t ${{ env.IMAGE_NAME}}:latest .
+      - name: Build Docker image and tag with SHA
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          export DOCKER_BUILDKIT=1
+          docker build -t "${{ env.IMAGE_NAME}}:${IMAGE_TAG}" -t "${{ env.IMAGE_NAME }}:latest" .
 
-      - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: '${{ env.IMAGE_NAME }}:latest'
-          severity: 'CRITICAL,HIGH'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          exit-code: 0
-
-          scanners: 'vulnerability'
-          builder: 'docker'
+      - name: Run Trivy Scan (JSON + SARIF)
+        id: trivy_scan
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy image --format json --output trivy-results.json --severity CRITICAL,HIGH "${{ env.IMAGE_NAME }}:${{ github.sha }}" || true
+          trivy image --format sarif --output trivy-results.sarif --severity CRITICAL,HIGH "${{ env.IMAGE_NAME }}:${{ github.sha }}" || true
+          if jq -e '.Results[]?.Vulnerabilities | select(.!=null) | .[] | select(.Severity=="CRITICAL" or .Severity=="HIGH")' trivy-results.json >/dev/null 2>&1; then
+            echo "vuln_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "vuln_found=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload Trivy Scan results
-        uses: github/codeql-action/upload-sarif@v3
         if: always()
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-results.sarif'
+          name: trivy-report
+          path: |
+            trivy-results.sarif
+            trivy-results.json
+
+      - name: Smoke test image
+        if: steps.trivy_scan.outputs.vuln_found != 'true'
+        run: |
+          docker run -d --name smoke_test -p 8080:8080 "${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          for i in {1..15}; docker
+            if curl -fsS http://localhost8080/health; then
+              echo "OK" && breal
+            fi
+            sleep 2
+          done
+          docker stop smoke_test || true
+          docker rm smoke_test || true
