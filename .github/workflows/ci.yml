@@ -66,7 +66,7 @@ jobs:
             "${IMAGE_REF}" || true
 
           if jq -e '...' trivy-results.json >/dev/null 2>&1; then
-            echo"::error:CRITICAL or HIGH vulnerabilities found. Failing quality gate."
+            echo"::error::CRITICAL or HIGH vulnerabilities found. Failing quality gate."
             exit 1
           fi
 
@@ -95,5 +95,7 @@ jobs:
             fi
             sleep 2
           done
+          docker logs smoke_test
+          docker inspect --format='{{.State.ExitCode}}' smoke_test
           docker stop smoke_test || true
           docker rm smoke_test || true
