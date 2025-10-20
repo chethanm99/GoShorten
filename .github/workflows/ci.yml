@@ -93,19 +93,25 @@ jobs:
             trivy-results.json
 
       - name: Smoke test image
+
         if: steps.trivy_scan.outputs.vuln_found != 'true'
+        container:
+          image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+        
+        env:
+          DB_ADDR: redis:6379 
+        
         run: |
-          docker run -d --name smoke_test -p 8080:8080 \
-            -e DB_ADDR=redis:6379 \
-            "${{ env.IMAGE_NAME }}:${{ github.sha }}"
-            
+          echo "Starting application health check..."
+          
           for i in {1..15}; do
             if curl -fsS http://localhost:8080/health; then
-              echo "OK" && break
+              echo "Smoke test PASSED. Application is ready."
+              exit 0
             fi
+            echo "Attempt $i: App not ready yet. Waiting 2 seconds..."
             sleep 2
           done
-          docker logs smoke_test
-          docker inspect --format='{{.State.ExitCode}}' smoke_test
-          docker stop smoke_test || true
-          docker rm smoke_test || true
+          
+          echo "::error::Smoke test FAILED: Application did not become ready after 30 seconds."
+          exit 1
