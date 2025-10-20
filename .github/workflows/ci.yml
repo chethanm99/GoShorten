@@ -59,6 +59,12 @@ jobs:
             echo "vuln_found=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Publish SARIF to Github Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
       - name: Upload Trivy Scan results
         if: always()
         uses: github/codeql-action/upload-sarif@v3
