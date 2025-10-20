@@ -93,13 +93,13 @@ jobs:
             trivy-results.json
 
       - name: Smoke test image
-
         if: steps.trivy_scan.outputs.vuln_found != 'true'
+        
         container:
           image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
-        
+      
         env:
-          DB_ADDR: redis:6379 
+          DB_ADDR: redis:6379
         
         run: |
           echo "Starting application health check..."
