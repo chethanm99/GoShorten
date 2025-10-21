@@ -99,28 +99,28 @@ jobs:
 
     container:
       image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
-      env:
+    env:
         DB_ADDR: redis:6379
       
     services:
       redis:
         image: redis:6-alpine
-        ports:
+        ports:`
           - 6379:6379
 
-      steps:
-        - name: Smoke test image
-          run: |
-            echo "Starting application health check..."
-            for i in {1...15}
-            do
-              if curl -fsS http://localhost/8080/health; then
-                echo "Smoke test PASSED. Application is ready."
-                exit 0
-              fi
-              echo "Attempt $i: App not ready yet. Waiting 2 seconds..."
-              sleep 2
-            done
+    steps:
+      - name: Smoke test image
+        run: |
+          echo "Starting application health check..."
+          for i in {1...15}
+          do
+            if curl -fsS http://localhost/8080/health; then
+              echo "Smoke test PASSED. Application is ready."
+              exit 0
+            fi
+            echo "Attempt $i: App not ready yet. Waiting 2 seconds..."
+            sleep 2
+          done
 
-            echo "::error::Smoke test FAILED: Application did not become ready after 30 seconds."
-            exit 1
+          echo "::error::Smoke test FAILED: Application did not become ready after 30 seconds."
+          exit 1
