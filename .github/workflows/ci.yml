@@ -102,7 +102,7 @@ jobs:
         id: sarif_check
         if: always()
         run: |
-          if [-f trviy_results.sarif]; then
+          if [ -f trivy_results.sarif ]; then
             echo "sarif_exists=true" >> $GITHUB_OUTPUT
           else
             echo "sarif_exists=false" >> $GITHUB_OUTPUT
