@@ -68,7 +68,7 @@ jobs:
         run: |
           REPO_LOWERCASE="${{ github.repository }}"
           REPO_LOWERCASE="${REPO_LOWERCASE,,}"
-          IMAGE_URI="ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}"
+          IMAGE_URI="ghcr.io/${REPO_LOWERCASE}/${{ env.IMAGE_NAME }}"
           docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${IMAGE_URI}:${IMAGE_TAG}"
           docker push "${IMAGE_URI}:${IMAGE_TAG}"
 
