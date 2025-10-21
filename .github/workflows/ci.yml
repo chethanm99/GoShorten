@@ -54,6 +54,22 @@ jobs:
           export DOCKER_BUILDKIT=1
           docker build -t "${{ env.IMAGE_NAME}}:${IMAGE_TAG}" -t "${{ env.IMAGE_NAME }}:latest" .
 
+      - name: Log in into GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image to registry
+        id: push_image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}"
+          docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${IMAGE_URI}:${IMAGE_TAG}"
+          docker push "${IMAGE_URI}:${IMAGE_TAG}"
+
       - name: Run Trivy Scan (JSON + SARIF)
         id: trivy_scan
         run: |
@@ -109,6 +125,20 @@ jobs:
          - 6379:6379
  
     steps:
+      - name: Login to GHCR and Pull the image
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the image and re-tag for smoke test
+        run: |
+          IMAGE_URI="ghcr.io/${{ github.repository }}/go-url-shortner"
+          IMAGE_REF="$go-url-shortner:${{ github.sha }}"
+          docker tag "go-url-shortner:${IMAGE_TAG}" "${IMAGE_URI}:${IMAGE_TAG}"
+          docker push "${IMAGE_URI}:${IMAGE_TAG}"
+          
       - name: Smoke test image
         run: |
           echo "Starting application health check..."
