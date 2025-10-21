@@ -149,7 +149,9 @@ jobs:
 
       - name: Pull the image and re-tag for smoke test
         run: |
-          GHCR_URI="ghcr.io/${{ github.repository_name }}/goshorten/go-url-shortner"
+          FULL_REPO_PATH="${{ github.repository }}"
+          FULL_REPO_PATH="${FULL_REPO_PATH,,}"
+          GHCR_URI="ghcr.io/${FULL_REPO_PATH}/go-url-shortner"
           LOCAL_REF="go-url-shortner:${{ github.sha }}"
           docker pull "${GHCR_URI}:${{ github.sha }}"
           docker tag "${GHCR_URI}:${{ github.sha }}" "${LOCAL_REF}"
