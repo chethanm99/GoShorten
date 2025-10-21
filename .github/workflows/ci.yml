@@ -98,8 +98,8 @@ jobs:
     if: needs.build_and_scan.outputs.vuln_found != 'true'
 
     container:
-      image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
-    env:
+      image: go-url-shortner:${{ github.sha }}
+      env:
         DB_ADDR: redis:6379
       
     services:
