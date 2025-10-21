@@ -125,7 +125,7 @@ jobs:
 
   smoke_test:
     needs: build_and_scan
-    runs-on: ubuntu-lates
+    runs-on: ubuntu-latest
     if: needs.build_and_scan.outputs.vuln_found != 'true'
 
     container:
