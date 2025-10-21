@@ -92,26 +92,35 @@ jobs:
             trivy-results.sarif
             trivy-results.json
 
-      - name: Smoke test image
-        if: steps.trivy_scan.outputs.vuln_found != 'true'
+  smoke_test:
+    needs: build_and_scan
+    runs-on: ubuntu-lates
+    if: needs.build_and_scan.outputs.vuln_found != 'true'
 
-        container:
-          image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+    container:
+      image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+      env:
+        DB_ADDR: redis:6379
       
-        env:
-          DB_ADDR: redis:6379
-        
-        run: |
-          echo "Starting application health check..."
-          for i in {1..15}
-          do
-            if curl -fsS http://localhost:8080/health; then
-              echo "Smoke test PASSED. Application is ready."
-              exit 0
-            fi
-            echo "Attempt $i: App not ready yet. Waiting 2 seconds..."
-            sleep 2
-          done
-          
-          echo "::error::Smoke test FAILED: Application did not become ready after 30 seconds."
-          exit 1
+    services:
+      redis:
+        image: redis:6-alpine
+        ports:
+          - 6379:6379
+
+      steps:
+        - name: Smoke test image
+          run: |
+            echo "Starting application health check..."
+            for i in {1...15}
+            do
+              if curl -fsS http://localhost/8080/health; then
+                echo "Smoke test PASSED. Application is ready."
+                exit 0
+              fi
+              echo "Attempt $i: App not ready yet. Waiting 2 seconds..."
+              sleep 2
+            done
+
+            echo "::error::Smoke test FAILED: Application did not become ready after 30 seconds."
+            exit 1
