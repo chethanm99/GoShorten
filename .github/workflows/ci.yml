@@ -152,10 +152,12 @@ jobs:
           FULL_REPO_PATH_LOWER="${FULL_REPO_PATH,,}"
           GHCR_URI="ghcr.io/${FULL_REPO_PATH_LOWER}/go-url-shortner"
           IMAGE_REF="${GHCR_URI}:${{ github.sha }}"
+
+          echo "Attempting authenticated pull from: ${IMAGE_REF}"
           docker pull "${IMAGE_REF}"
 
           docker run -d --name smoke_test \
-            -- network job-network \
+            --network job-network \
             -p 8080:8080
             -e DB_ADDR=redis:6379 \
             "${IMAGE_REF}"
@@ -168,11 +170,11 @@ jobs:
           done
 
           docker logs smoke_test
-          EXIT_CODE=$(docker inspect --format='{{State.ExitCode}}' smoke_test)
+          EXIT_CODE=$(docker inspect --format='{{.State.ExitCode}}' smoke_test)
           docker stop smoke_test || true
           docker rm smoke_test || true
 
-          if [ "EXIT_CODE" -ne 0 ]; then
+          if [ "$EXIT_CODE" -ne 0 ]; then
             echo "Smoke test container failed with exit code $EXIT_CODE"
             exit 1
           fi
