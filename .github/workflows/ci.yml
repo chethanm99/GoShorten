@@ -140,34 +140,40 @@ jobs:
          - 6379:6379
  
     steps:
-      - name: Login to GHCR and Pull the image
+      - name: Login into GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull the image and re-tag for smoke test
+      - name: Smoke test (Integrated with Pull and Run)
         run: |
           FULL_REPO_PATH="${{ github.repository }}"
           FULL_REPO_PATH_LOWER="${FULL_REPO_PATH,,}"
           GHCR_URI="ghcr.io/${FULL_REPO_PATH_LOWER}/go-url-shortner"
-          LOCAL_REF="go-url-shortner:${{ github.sha }}"
-          docker pull "${GHCR_URI}:${{ github.sha }}"
-          docker tag "${GHCR_URI}:${{ github.sha }}" "${LOCAL_REF}"
-          
-      - name: Smoke test image
-        run: |
-          echo "Starting application health check..."
-          for i in {1...15}
-          do
-            if curl -fsS http://localhost/8080/health; then
-              echo "Smoke test PASSED. Application is ready."
-              exit 0
+          IMAGE_REF="go-url-shortner:${{ github.sha }}"
+          docker pull "${IMAGE_REF}"
+
+          docker run -d --name smoke_test \
+            -- network job-network \
+            -p 8080:8080
+            -e DB_ADDR=redis:6379 \
+            "${IMAGE_REF}"
+
+          for i in {1..15}; do
+            if curl -fsS http://localhost:8080/health; then
+              echo "OK" && break
             fi
-            echo "Attempt $i: App not ready yet. Waiting 2 seconds..."
             sleep 2
           done
 
-          echo "::error::Smoke test FAILED: Application did not become ready after 30 seconds."
-          exit 1
+          docker logs smoke_test
+          EXIT_CODE=$(docker inspect --format='{{State.ExitCode}}' smoke_test)
+          docker stop smoke_test || true
+          docker rm smoke_test || true
+
+          if [ "EXIT_CODE" -ne 0 ]; then
+            echo "Smoke test container failed with exit code $EXIT_CODE"
+            exit 1
+          fi
