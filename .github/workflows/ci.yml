@@ -127,11 +127,11 @@ jobs:
     needs: build_and_scan
     runs-on: ubuntu-latest
     if: needs.build_and_scan.outputs.vuln_found != 'true'
-      
+
     services:
       redis:
         image: redis:6-alpine
-
+        
     steps:
       - name: Login into GHCR
         run: |
