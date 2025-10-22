@@ -141,18 +141,17 @@ jobs:
  
     steps:
       - name: Login into GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io
+            -u ${{ github.actor }} \
+            --password-stdin
 
       - name: Smoke test (Integrated with Pull and Run)
         run: |
           FULL_REPO_PATH="${{ github.repository }}"
           FULL_REPO_PATH_LOWER="${FULL_REPO_PATH,,}"
           GHCR_URI="ghcr.io/${FULL_REPO_PATH_LOWER}/go-url-shortner"
-          IMAGE_REF="go-url-shortner:${{ github.sha }}"
+          IMAGE_REF="${GHCR_URI}:${{ github.sha }}"
           docker pull "${IMAGE_REF}"
 
           docker run -d --name smoke_test \
