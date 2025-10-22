@@ -127,11 +127,6 @@ jobs:
     needs: build_and_scan
     runs-on: ubuntu-latest
     if: needs.build_and_scan.outputs.vuln_found != 'true'
-
-    container:
-      image: go-url-shortner:${{ github.sha }}
-      env:
-        DB_ADDR: redis:6379
       
     services:
       redis:
@@ -142,9 +137,7 @@ jobs:
     steps:
       - name: Login into GHCR
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io
-            -u ${{ github.actor }} \
-            --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Smoke test (Integrated with Pull and Run)
         run: |
