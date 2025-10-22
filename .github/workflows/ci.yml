@@ -151,7 +151,7 @@ jobs:
 
           docker run -d --name smoke_test \
             --network job-network \
-            -p 8080:8080
+            -p 8080:8080 \
             -e DB_ADDR=redis:6379 \
             "${IMAGE_REF}"
 
