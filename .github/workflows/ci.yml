@@ -171,7 +171,7 @@ jobs:
             "${IMAGE_REF}"
 
           for i in {1..15}; do
-            if curl -fsS http://localhost:8080/health; then
+            if curl -fsS http://localhost:8080/healthz; then
               echo "OK" && break
             fi
             sleep 2
