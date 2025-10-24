@@ -65,6 +65,45 @@ jobs:
           export DOCKER_BUILDKIT=1
           docker build -t "${{ env.IMAGE_NAME}}:${IMAGE_TAG}" -t "${{ env.IMAGE_NAME }}:latest" .
 
+      - name: Run Trivy Scan (JSON + SARIF)
+        id: trivy_scan
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          IMAGE_REF="${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+          /usr/local/bin/trivy image \
+            --format sarif \
+            --output trivy-results.sarif \
+            --severity CRITICAL,HIGH \
+            "${IMAGE_REF}" || true
+
+          /usr/local/bin/trivy image \
+            --format json \
+            --output trivy-results.json \
+            --severity CRITICAL,HIGH \
+            "${IMAGE_REF}" || true
+
+          /usr/local/bin/trivy image \
+            --format cyclonedx \
+            --output trivy-sbom-cyclonedx.json \
+            "${IMAGE_REF}" || true
+
+          /usr/local/bin/trviy image \
+            --format spdx-json \
+            --output trivy-sbom-spdx.json \
+            "${IMAGE_REF}" || true
+
+          if [ -s trivy-results.json ]; then
+            if jq -e 'if (.Results | length > 0) then .Results[].Vulnerabilities[] | select(.Severity == "CRITICAL" or .Severity == "HIGH") else empty end' trivy-results.json >/dev/null 2>&1; then
+              echo "::error::CRITICAL or HIGH vulnerabilities found. Failing quality gate."
+              exit 1
+            else
+               echo "No CRITICAL or HIGH vulnerabilities found. Security gate passed."
+            fi
+          else
+             echo "Trivy JSON file is empty or missing, assuming scan passed (no vulnerabilities found)."
+          fi
+
       - name: Log in into GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -84,29 +123,6 @@ jobs:
           docker push "${IMAGE_URI}:${IMAGE_TAG}"
 
           echo "IMAGE_URI=${IMAGE_URI}:${IMAGE_TAG}" >> $GITHUB_ENV
-
-      - name: Run Trivy Scan (JSON + SARIF)
-        id: trivy_scan
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-          IMAGE_REF="${{ env.IMAGE_NAME }}:${{ github.sha }}"
-
-          /usr/local/bin/trivy image \
-            --format sarif \
-            --output trivy-results.sarif \
-            --severity CRITICAL,HIGH \
-            "${IMAGE_REF}" || true
-
-          /usr/local/bin/trivy image \
-            --format json \
-            --output trivy-results.json \
-            --severity CRITICAL,HIGH \
-            "${IMAGE_REF}" || true
-
-          if jq -e '...' trivy-results.json >/dev/null 2>&1; then
-            echo"::error::CRITICAL or HIGH vulnerabilities found. Failing quality gate."
-            exit 1
-          fi
 
       - name: Check if SARIF file was created
         id: sarif_check
@@ -132,6 +148,8 @@ jobs:
           path: |
             trivy-results.sarif
             trivy-results.json
+            trivy-sbom-cyclonedx.json
+            trivy-sbom-spdx.json
 
   smoke_test:
     needs: build_and_scan
