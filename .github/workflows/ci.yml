@@ -135,8 +135,7 @@ jobs:
         run:
           export COSIGN_EXPERIMENTAL=true
           echo "Signing image: $IMAGE_DIGEST_REF"
-          cosign sign "IMAGE_DIGEST_REF"
-          echo "Image signed successfully"
+          cosign sign "$IMAGE_DIGEST_REF"
 
       - name: Verify image signature (Keyless mode)
         if: always() && steps.trivy_scan.outputs.vuln_found == 'false'
