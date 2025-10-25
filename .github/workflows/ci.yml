@@ -121,7 +121,7 @@ jobs:
           REPO_LOWERCASE="${REPO_LOWERCASE,,}"
           IMAGE_URI_TAG="ghcr.io/${REPO_LOWERCASE}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
           docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${IMAGE_URI_TAG}"
-          IMAGE_DIGEST_REF=$(docker push "${IMAGE_URI}:${IMAGE_TAG}" | tail -n 1)
+          IMAGE_DIGEST_REF=$(docker push "${IMAGE_URI_TAG}" | tail -n 1)
 
           echo "IMAGE_DIGEST_REF=${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
 
