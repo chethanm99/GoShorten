@@ -119,28 +119,37 @@ jobs:
         run: |
           REPO_LOWERCASE="${{ github.repository }}"
           REPO_LOWERCASE="${REPO_LOWERCASE,,}"
-          IMAGE_URI="ghcr.io/${REPO_LOWERCASE}/${{ env.IMAGE_NAME }}"
-          docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${IMAGE_URI}:${IMAGE_TAG}"
-          docker push "${IMAGE_URI}:${IMAGE_TAG}"
+          IMAGE_URI_TAG="ghcr.io/${REPO_LOWERCASE}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+          docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${IMAGE_URI_TAG}"
+          IMAGE_DIGEST_REF=$(docker push "${IMAGE_URI}:${IMAGE_TAG}" | tail -n 1)
 
-          echo "IMAGE_URI=${IMAGE_URI}:${IMAGE_TAG}" >> $GITHUB_ENV
+          echo "IMAGE_DIGEST_REF=${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
 
-      - name: Install Cosgin
-        run: |
-          curl -sSL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
-          chmod +x /usr/local/bin/cosign
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
 
-      - name: Sign images with Cosign (keyless)
+      - name: Keyless Sign the images with Cosign (keyless)
+        if: steps.trivy_scan.outputs.vuln_found == "false"
         env:
-          COSIGN_EXPERIMENTAL: "true"
-        run: |
-          echo "Signing images: $IMAGE_URI"
-          cosign sign --yes "${IMAGE_URI}"
+          IMAGE_DIGEST_REF: ${{ env.IMAGE_DIGEST_REF }}
+        run:
+          export COSIGN_EXPERIMENTAL=true
+          echo "Signing image: $IMAGE_DIGEST_REF"
+          cosign sign "IMAGE_DIGEST_REF"
+          echo "Image signed successfully"
 
-      - name: Verify image signature
+      - name: Verify image signature (Keyless mode)
+        if: always() && steps.trivy_scan.outputs.vuln_found == 'false'
+        env:
+          IMAGE_DIGEST_REF: ${{ env.IMAGE_DIGEST_REF }}
         run: |
-          echo "Verfiying signature for $IMAGE_URI"
-          cosign verify "${IMAGE_URI}" | tee cosign-verify-output.txt
+          export COSIGN_EXPERIMENTAL=true
+          echo "Verifying signature for $IMAGE_DIGEST_REF"
+
+          cosign verify \
+            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@${{ github.ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$IMAGE_DIGEST_REF" | tee cosign-verify-output.txt
 
       - name: Check if SARIF file was created
         id: sarif_check
