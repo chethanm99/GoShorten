@@ -134,7 +134,6 @@ jobs:
           IMAGE_DIGEST_REF: ${{ env.IMAGE_DIGEST_REF }}
         run:
           export COSIGN_EXPERIMENTAL=true
-          echo "Signing image: $IMAGE_DIGEST_REF"
           cosign sign "$IMAGE_DIGEST_REF"
 
       - name: Verify image signature (Keyless mode)
