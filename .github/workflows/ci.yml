@@ -129,7 +129,7 @@ jobs:
         uses: sigstore/cosign-installer@v3.5.0
 
       - name: Keyless Sign the images with Cosign (keyless)
-        if: steps.trivy_scan.outputs.vuln_found == "false"
+        if: steps.trivy_scan.outputs.vuln_found == 'false'
         env:
           IMAGE_DIGEST_REF: ${{ env.IMAGE_DIGEST_REF }}
         run:
