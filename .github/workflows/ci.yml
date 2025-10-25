@@ -24,6 +24,7 @@ jobs:
       contents: read
       security-events: write
       packages: write
+      id-token: write
 
     steps:
       - name: Checkout Repository
@@ -124,6 +125,23 @@ jobs:
 
           echo "IMAGE_URI=${IMAGE_URI}:${IMAGE_TAG}" >> $GITHUB_ENV
 
+      - name: Install Cosgin
+        run: |
+          curl -sSL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
+          chmod +x /usr/local/bin/cosign
+
+      - name: Sign images with Cosign (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          echo "Signing images: $IMAGE_URI"
+          cosign sign --yes "${IMAGE_URI}"
+
+      - name: Verify image signature
+        run: |
+          echo "Verfiying signature for $IMAGE_URI"
+          cosign verify "${IMAGE_URI}" | tee cosign-verify-output.txt
+
       - name: Check if SARIF file was created
         id: sarif_check
         if: always()
@@ -140,16 +158,17 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      - name: Upload Trivy Scan results
+      - name: Upload Trivy and Cosign artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-report
+          name: security-artifacts
           path: |
             trivy-results.sarif
             trivy-results.json
             trivy-sbom-cyclonedx.json
             trivy-sbom-spdx.json
+            cosign-verify-output.txt
 
   smoke_test:
     needs: build_and_scan
