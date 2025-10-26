@@ -41,6 +41,13 @@ jobs:
         with:
           go-version: '1.24.3'
 
+      - name: Run GolangCI-lint
+        uses: golangci/golangci-lint-action@v5
+        with:
+          version: v1.59
+          working-directory: app
+          args: --timeout=5m
+
       - name: Cache go modules and build cache
         uses: actions/cache@v4
         with:
@@ -50,6 +57,15 @@ jobs:
           key: ${{ runner.os }}-go-mod-${{ hashfiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-mod-
+
+      - name: Run Vet and Generate Coverage
+        working-directory: app
+        run: |
+          echo "Running go vet for static analysis"
+          go vet ./...
+
+          echo "Running tests and generating cover profile"
+          go test -coverprofile=coverage.out ./... -v
 
       - name: Run tests
         working-directory: app
@@ -176,6 +192,7 @@ jobs:
             trivy-sbom-cyclonedx.json
             trivy-sbom-spdx.json
             cosign-verify-output.txt
+            app/coverage.out
 
   smoke_test:
     needs: build_and_scan
