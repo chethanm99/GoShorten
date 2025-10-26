@@ -1,0 +1,14 @@
+run:
+  modules-download-mode: vendor
+  timeout: 5m
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - unused
+    - gofmt
+    - goimports
+    - errcheck
