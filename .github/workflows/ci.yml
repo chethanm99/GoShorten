@@ -44,8 +44,11 @@ jobs:
       - name: Download Go modules
         working-directory: app
         run: |
+          echo "Downloading go modules"
           go mod download
-          go install ./...
+          
+          echo "Vendoring modules"
+          go mod vendor
 
       - name: Run GolangCI-lint
         uses: golangci/golangci-lint-action@v5
