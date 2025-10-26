@@ -43,7 +43,10 @@ jobs:
 
       - name: Download Go modules
         working-directory: app
-        run: go mod download
+        run: |
+          pwd
+          go mod download
+          ls -l go.mod go.sum
 
       - name: Run GolangCI-lint
         uses: golangci/golangci-lint-action@v5
