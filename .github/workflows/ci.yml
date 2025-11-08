@@ -22,7 +22,7 @@ jobs:
       - name: Run Checkov on infra/
         run: checkov -d infra/ -o json > checkov-report.json || true
 
-      - name: name: Upload Checkov report
+      - name: Upload Checkov report
         uses: actions/upload-artifact@v4
         with:
           name: checkov-report
@@ -42,7 +42,7 @@ jobs:
 
   build_and_scan:
     runs-on: ubuntu-latest
-    
+
     services:
       redis:
         image: redis:6-alpine
