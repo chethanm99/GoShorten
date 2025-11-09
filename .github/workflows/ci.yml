@@ -167,7 +167,6 @@ jobs:
           IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
 
           echo "FULL_IMAGE_DIGEST=${ECR_REGISTRY}/${IMAGE_NAME}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
-          echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_OUTPUT
 
       - name: Set ECR_URI_TAG as job output
         id: set_output
@@ -233,7 +232,6 @@ jobs:
   smoke_test:
     needs: build_and_scan
     runs-on: ubuntu-latest
-    if: needs.build_and_scan.outputs.vuln_found != 'true'
 
     steps:
       - name: Checkout Repository
