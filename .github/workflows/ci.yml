@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      ECR_URI_TAG: ${{ steps.push_image.outputs.ECR_URI_TAG }}
+      ECR_URI_TAG: ${{ steps.step_output.outputs.ECR_URI_TAG }}
 
     services:
       redis:
@@ -168,6 +168,17 @@ jobs:
 
           echo "FULL_IMAGE_DIGEST=${ECR_REGISTRY}/${IMAGE_NAME}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
           echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Set ECR_URI_TAG as job output
+        id: set_output
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const registry = "${{ steps.login-ecr.outputs.registry }}";
+            const image = "${{ env.IMAGE_NAME }}";
+            const tag = "${{ github.sha }}";
+            const ecrUriTag = `${registry}/${image}:${tag}`;
+            core.setOutput('ECR_URI_TAG', ecrUriTag);
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.5.0
