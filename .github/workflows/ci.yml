@@ -153,7 +153,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.configure_aws.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
           IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
         run: |
-          aws ecr describe-repositories --repository-names go-shortner || aws ecr create-repository --repository-name go-shortner
+          aws ecr describe-repositories --repository-names go-url-shortner || aws ecr create-repository --repository-name go-url-shortner
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
           docker tag "${IMAGE}" "$ECR_REGISTRY/go-url-shortner:${{ github.sha }}"
           docker push "$ECR_REGISTRY/go-url-shortner:${{ github.sha }}"
