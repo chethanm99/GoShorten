@@ -49,6 +49,9 @@ jobs:
   build_and_scan:
     runs-on: ubuntu-latest
 
+    outputs:
+      ECR_URI_TAG: ${{ steps.push_image.outputs.ECR_URI_TAG }}
+
     services:
       redis:
         image: redis:6-alpine
@@ -164,7 +167,7 @@ jobs:
           IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
 
           echo "FULL_IMAGE_DIGEST=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
-          echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_ENV
+          echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_OUTPUT
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.5.0
