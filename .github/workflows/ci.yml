@@ -148,26 +148,32 @@ jobs:
           aws-region: us-east-1
           role-session-name: github-ci-session
 
-      - name: Tag & Push to ECR
+      - name: Login to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag and Push the images to ECR
+        id: push_image
         env:
-          ECR_REGISTRY: ${{ steps.configure_aws.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
-          IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          IMAGE_TAG: ${{ github.sha }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          aws ecr describe-repositories --repository-names go-url-shortner || aws ecr create-repository --repository-name go-url-shortner
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
-          docker tag "${IMAGE}" "$ECR_REGISTRY/go-url-shortner:${{ github.sha }}"
-          docker push "$ECR_REGISTRY/go-url-shortner:${{ github.sha }}"
+          ECR_URI_TAG:"{{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+          docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${ECR_URI_TAG}"
+          IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
+
+          echo "FULL_IMAGE_DIGEST=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
+          echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_ENV
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.5.0
 
       - name: Keyless Sign the images with Cosign (keyless)
         if: steps.trivy_scan.outputs.vuln_found == 'false'
-        env:
-          IMAGE_DIGEST_REF: ${{ env.IMAGE_DIGEST_REF }}
         run:
           export COSIGN_EXPERIMENTAL=true
-          cosign sign "$IMAGE_DIGEST_REF"
+          cosign sign ${{ env.FULL_IMAGE_DIGEST }}
 
       - name: Verify image signature (Keyless mode)
         if: always() && steps.trivy_scan.outputs.vuln_found == 'false'
@@ -180,7 +186,7 @@ jobs:
           cosign verify \
             --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@${{ github.ref }}" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            "$IMAGE_DIGEST_REF" | tee cosign-verify-output.txt
+            ${{ env.FULL_IMAGE_DIGEST }} | tee cosign-verify-output.txt
 
       - name: Check if SARIF file was created
         id: sarif_check
