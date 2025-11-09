@@ -162,11 +162,11 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          ECR_URI_TAG="${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
-          docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${ECR_URI_TAG}"
+          ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+          docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${ECR_URI_TAG}"
           IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
 
-          echo "FULL_IMAGE_DIGEST=${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
+          echo "FULL_IMAGE_DIGEST=${ECR_REGISTRY}/${IMAGE_NAME}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
           echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_OUTPUT
 
       - name: Install Cosign
