@@ -144,8 +144,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::398195329839:role/GitHubActionsECRPushRole
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: us-east-1
+          role-session-name: github-ci-session
 
       - name: Tag & Push to ECR
         env:
