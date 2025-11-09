@@ -222,9 +222,18 @@ jobs:
     if: needs.build_and_scan.outputs.vuln_found != 'true'
 
     steps:
-      - name: Login into GHCR
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials for smoke test
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: github-smoke-test-session
+
+      - name: Login to Amazon ECR for Smoke Test
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Setup Redis network and service
         run: |
@@ -239,12 +248,7 @@ jobs:
 
       - name: Smoke test (Integrated with Pull and Run)
         run: |
-          FULL_REPO_PATH="${{ github.repository }}"
-          FULL_REPO_PATH_LOWER="${FULL_REPO_PATH,,}"
-          GHCR_URI="ghcr.io/${FULL_REPO_PATH_LOWER}/go-url-shortner"
-          IMAGE_REF="${GHCR_URI}:${{ github.sha }}"
-
-          echo "Attempting authenticated pull from: ${IMAGE_REF}"
+          IMAGE_REF="${{ needs.build_and_scan.outputs.ECR_URI_TAG }}"
           docker pull "${IMAGE_REF}"
 
           docker run -d --name smoke_test \
