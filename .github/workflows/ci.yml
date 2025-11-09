@@ -159,7 +159,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          ECR_URI_TAG:"{{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+          ECR_URI_TAG="${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
           docker tag "${{ env.IMAGE_NAME }}:${IMAGE_TAG}" "${ECR_URI_TAG}"
           IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
 
