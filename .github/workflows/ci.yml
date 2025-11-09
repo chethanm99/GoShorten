@@ -98,12 +98,18 @@ jobs:
         run: |
           if [ -f .env.example ]; then cp .env.example .env; fi
 
-      - name: Build Docker image and tag with SHA
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          export DOCKER_BUILDKIT=1
-          docker build -t "${{ env.IMAGE_NAME}}:${IMAGE_TAG}" -t "${{ env.IMAGE_NAME }}:latest" .
+      - name: Build Docker image
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          cache-from: type=gha,scope=${{ github.sha }}
+          cache-to: type=gha,scope=${{ github.workflow }},mode=max
+          tags:
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+          push: false
+          context: .
+          load: true
 
       - name: Run Trivy Scan (JSON + SARIF)
         id: trivy_scan
