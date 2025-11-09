@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      ECR_URI_TAG: ${{ steps.step_output.outputs.ECR_URI_TAG }}
+      ECR_URI_TAG: ${{ steps.set_output.outputs.ECR_URI_TAG }}
 
     services:
       redis:
