@@ -104,7 +104,7 @@ jobs:
         with:
           cache-from: type=gha,scope=${{ github.sha }}
           cache-to: type=gha,scope=${{ github.workflow }},mode=max
-          tags:
+          tags: |
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
           push: false
