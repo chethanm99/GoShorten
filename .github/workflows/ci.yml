@@ -184,9 +184,9 @@ jobs:
       - name: Set ECR_URI_TAG as job output
         id: set_output
         run: |
-          ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-          IMAGE_NAME="${{ env.IMAGE_NAME }}"
-          IMAGE_TAG="${{ github.sha }}"
+          ECR_REGISTRY=$(echo "${{ steps.login-ecr.outputs.registry }}" | tr -d '\n' | xargs)
+          IMAGE_NAME=$(echo "${{ env.IMAGE_NAME }}" | tr -d '\n' | xargs)
+          IMAGE_TAG=$(echo "${{ github.sha }}" | tr -d '\n' | xargs)
           ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
           echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_OUTPUT
