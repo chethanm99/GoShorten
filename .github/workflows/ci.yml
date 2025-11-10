@@ -164,6 +164,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Debug ECR Registry output
+        run: |
+          echo "ECR Registry Output: [${{ steps.login-ecr.outputs.registry }}]"
+
       - name: Tag and Push the images to ECR
         id: push_image
         env:
