@@ -189,8 +189,10 @@ jobs:
           IMAGE_TAG=$(echo "${{ github.sha }}" | tr -d '\n' | xargs)
           ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-          echo "ECR_URI_TAG=${ECR_URI_TAG}" >> $GITHUB_OUTPUT
-          echo "Set output ECR_URI_TAG: ${ECR_URI_TAG}"
+          CLEAN_URI_TAG=$(echo "${ECR_URI_TAG}" | xargs)
+    
+          echo "ECR_URI_TAG=${CLEAN_URI_TAG}" >> $GITHUB_OUTPUT
+          echo "Set output ECR_URI_TAG: [${CLEAN_URI_TAG}]"
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.5.0
