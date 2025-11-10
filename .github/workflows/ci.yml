@@ -275,8 +275,7 @@ jobs:
 
       - name: Smoke test (Integrated with Pull and Run)
         run: |
-          IMAGE_REF="${{ needs.build_and_scan.outputs.ECR_URI_TAG }}"
-          echo "IMAGE_REF: ${IMAGE_REF}"
+          IMAGE_REF=$(echo "${{ needs.build_and_scan.outputs.ECR_URI_TAG }}" | xargs)
           echo -n "${IMAGE_REF}" | xxd -p
           docker pull "${IMAGE_REF}"
 
