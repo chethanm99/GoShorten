@@ -34,14 +34,13 @@ jobs:
           name: checkov-report
           path: checkov-report.json
 
-      - name: Fail on critical Checkov findings (optional)
+      - name: Fail on critical Checkov findings
         if: always()
         run: |
           # Check if the 'failed_checks' array has any elements
           if jq -e '.results.failed_checks | length > 0' checkov-report.json >/dev/null 2>&1; then
             echo "::error::Checkov found one or more failed infrastructure security checks."
-            # Uncomment the next line to fail CI when Checkov finds anything
-            # exit 1
+            exit 1
           else
             echo "Checkov scan passed. No failed infrastructure checks found."
           fi
