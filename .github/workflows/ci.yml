@@ -186,7 +186,7 @@ jobs:
             const image = "${{ env.IMAGE_NAME }}";
             const tag = "${{ github.sha }}";
             const ecrUriTag = `${registry}/${image}:${tag}`;
-            core.setOutput('ECR_URI_TAG', ecrUriTag);
+            core.setOutput('ECR_URI_TAG', ecrUriTag.trim());
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.5.0
