@@ -86,7 +86,7 @@ jobs:
             ${{ runner.os }}-go-mod-
 
       - name: Download Go modules (only on cache miss)
-        if: steps.go-cache.outputs.cache-hit != "true"
+        if: steps.go-cache.outputs.cache-hit != 'true'
         working-directory: app
         run: |
           echo "Cache missing, downloading go modules"
