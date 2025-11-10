@@ -180,7 +180,7 @@ jobs:
       - name: Set ECR_URI_TAG as job output
         id: set_output
         run: |
-          ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}""
+          ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
           IMAGE_NAME="${{ env.IMAGE_NAME }}"
           IMAGE_TAG="${{ github.sha }}"
           ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
