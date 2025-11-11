@@ -175,11 +175,14 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+          CLEAN_REGISTRY=$(echo "${ECR_REGISTRY_RAW}" | tr -d '\n' | xargs)
+          CLEAN_IMAGE_NAME=$(echo "${IMAGE_NAME}" | tr -d '\n' | xargs)
+
+          ECR_URI_TAG="${CLEAN_REGISTRY}/${CLEAN_IMAGE_NAME}:${IMAGE_TAG}"
           docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${ECR_URI_TAG}"
           IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
-
-          echo "FULL_IMAGE_DIGEST=${ECR_REGISTRY}/${IMAGE_NAME}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
+          echo "ECR_URI_TAG_CLEAN=${ECR_URI_TAG}" >> $GITHUB_ENV
+          echo "FULL_IMAGE_DIGEST=${CLEAN_REGISTRY}/${CLEAN_IMAGE_NAME}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
 
       - name: Set ECR_URI_TAG as job output
         id: set_output
