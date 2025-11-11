@@ -173,7 +173,9 @@ jobs:
       - name: Tag and Push the images to ECR
         id: push_image
         run: |
-          CLEAN_REGISTRY="${{ steps.login-ecr.outputs.regisrty }}"
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+          AWS_REGION="us-east-1"
+          CLEAN_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           CLEAN_IMAGE_NAME="${{ env.IMAGE_NAME }}"
           IMAGE_TAG="${{ github.sha }}"
 
@@ -182,7 +184,7 @@ jobs:
               echo "::error::ECR Registry URI is empty. Cannot tag image."
               exit 1
           fi
-          
+
           docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${ECR_URI_TAG}"
           IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
           echo "ECR_URI_TAG_CLEAN=${ECR_URI_TAG}" >> $GITHUB_ENV
