@@ -23,7 +23,7 @@ resource "aws_ecr_lifecyle_policy" "app_cleanup_policy"{
             {
                 rulePriority = 1,
                 description = "Keep the latest five images",
-                selction = {
+                selection = {
                     tagStatus = "any"
                     countType = "imageCountMoreThan"
                     countNumber = 5
