@@ -284,7 +284,7 @@ jobs:
             --network job-network \
             -p 8080:8080 \
             -e DB_ADDR=redis:6379 \
-            "${IMAGE_REF}"
+            "${IMAGE_REF_FINAL}"
 
           for i in {1..15}; do
             if curl -fsS http://localhost:8080/healthz; then
