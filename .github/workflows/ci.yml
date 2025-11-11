@@ -185,8 +185,8 @@ jobs:
         id: set_output
         run: |
           ECR_REGISTRY=$(echo "${{ steps.login-ecr.outputs.registry }}" | tr -d '\n' | xargs)
-          IMAGE_NAME=$(echo "${{ env.IMAGE_NAME }}" | tr -d '\n' | xargs)
-          IMAGE_TAG=$(echo "${{ github.sha }}" | tr -d '\n' | xargs)
+          IMAGE_NAME=$(echo "${IMAGE_NAME}" | tr -d '\n' | xargs)
+          IMAGE_TAG=$(echo "${GITHUB_SHA}" | tr -d '\n' | xargs)
           ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
           CLEAN_URI_TAG=$(echo "${ECR_URI_TAG}" | xargs | tr -d '\n')
