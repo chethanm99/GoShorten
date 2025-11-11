@@ -190,40 +190,21 @@ jobs:
           echo "ECR_URI_TAG_CLEAN=${ECR_URI_TAG}" >> $GITHUB_ENV
           echo "FULL_IMAGE_DIGEST=${CLEAN_REGISTRY}/${CLEAN_IMAGE_NAME}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
 
-      - name: Set ECR_URI_TAG as job output
+      - name: Write ECR URI to artifact file
         id: set_output
         run: |
-          CLEAN_REGISTRY="${CLEAN_ECR_REGISTRY}"
-          CLEAN_NAME=$(echo "${IMAGE_NAME}" | tr -d '\n' | xargs)
-          CLEAN_TAG=$(echo "${GITHUB_SHA}" | tr -d '\n' | xargs)
-          ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+          CLEAN_URI_TAG="${ECR_URI_TAG_CLEAN}"
+          echo "${CLEAN_URI_TAG}" > image_uri.txt
 
-          CLEAN_URI_TAG="${CLEAN_REGISTRY}/${CLEAN_NAME}:${CLEAN_TAG}"
-    
           echo "ECR_URI_TAG=${CLEAN_URI_TAG}" >> $GITHUB_OUTPUT
           echo "Set final output: [${CLEAN_URI_TAG}]"
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.5.0
-
-      - name: Keyless Sign the images with Cosign (keyless)
-        if: steps.trivy_scan.outputs.vuln_found == 'false'
-        run:
-          export COSIGN_EXPERIMENTAL=true
-          cosign sign ${{ env.FULL_IMAGE_DIGEST }}
-
-      - name: Verify image signature (Keyless mode)
-        if: always() && steps.trivy_scan.outputs.vuln_found == 'false'
-        env:
-          IMAGE_DIGEST_REF: ${{ env.IMAGE_DIGEST_REF }}
-        run: |
-          export COSIGN_EXPERIMENTAL=true
-          echo "Verifying signature for $IMAGE_DIGEST_REF"
-
-          cosign verify \
-            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@${{ github.ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            ${{ env.FULL_IMAGE_DIGEST }} | tee cosign-verify-output.txt
+      - name: Upload Image URI Artficat
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-reference-uri
+          path: image_uri.txt
+          retention-days: 1
 
       - name: Check if SARIF file was created
         id: sarif_check
@@ -249,10 +230,7 @@ jobs:
           path: |
             trivy-results.sarif
             trivy-results.json
-            trivy-sbom-cyclonedx.json
-            trivy-sbom-spdx.json
-            cosign-verify-output.txt
-
+            
   smoke_test:
     needs: [build_and_scan]
     runs-on: ubuntu-latest
@@ -260,6 +238,18 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Download IMAGE URI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-reference-uri
+          path: ./
+
+      - name: Read Image URI into Shell Variable
+        id: read_uri
+        run: |
+          PULL_URI=$(cat image_uri.txt | xargs)
+          echo "IMAGE_REF_FIXED=${PULL_URI}" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials for smoke test
         uses: aws-actions/configure-aws-credentials@v4
@@ -286,9 +276,9 @@ jobs:
         env:
           IMAGE_REF: ${{ needs.build_and_scan.outputs.ECR_URI_TAG }}
         run: |
-          PULL_REF=$(echo "${IMAGE_REF}" | xargs)
-          echo "PULLING: [${PULL_REF}]"
-          docker pull "${IMAGE_REF}"
+          IMAGE_REF_FINAL="${{ steps.read_uri.outputs.IMAGE_REF_FIXED }}"
+          echo "PULLING FINAL: [${IMAGE_REF_FINAL}]" 
+          docker pull "${IMAGE_REF_FINAL}"
 
           docker run -d --name smoke_test \
             --network job-network \
