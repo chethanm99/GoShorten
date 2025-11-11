@@ -168,7 +168,7 @@ jobs:
         run: |
           ECR_REGISTRY=$(echo "${{ steps.login-ecr.outputs.registry }}" | tr -d '\n' | xargs)
           echo "CLEAN_ECR_REGISTRY=${ECR_REGISTRY}" >> $GITHUB_ENV
-          echo "DEBUG: Set CLEAN_ECR_REGISTRY=[${ECR_REGISTRY}] to ENV
+          echo "DEBUG: Set CLEAN_ECR_REGISTRY=[${ECR_REGISTRY}] to ENV"
 
       - name: Tag and Push the images to ECR
         id: push_image
