@@ -166,7 +166,9 @@ jobs:
 
       - name: Debug ECR Registry output
         run: |
-          echo "ECR Registry Output: [${{ steps.login-ecr.outputs.registry }}]"
+          ECR_REGISTRY=$(echo "${{ steps.login-ecr.outputs.registry }}" | tr -d '\n' | xargs)
+          echo "CLEAN_ECR_REGISTRY=${ECR_REGISTRY}" >> $GITHUB_ENV
+          echo "DEBUG: Set CLEAN_ECR_REGISTRY=[${ECR_REGISTRY}] to ENV
 
       - name: Tag and Push the images to ECR
         id: push_image
@@ -187,12 +189,12 @@ jobs:
       - name: Set ECR_URI_TAG as job output
         id: set_output
         run: |
-          ECR_REGISTRY=$(echo "${{ steps.login-ecr.outputs.registry }}" | tr -d '\n' | xargs)
-          IMAGE_NAME=$(echo "${IMAGE_NAME}" | tr -d '\n' | xargs)
-          IMAGE_TAG=$(echo "${GITHUB_SHA}" | tr -d '\n' | xargs)
+          CLEAN_REGISTRY="${CLEAN_ECR_REGISTRY}"
+          CLEAN_NAME=$(echo "${IMAGE_NAME}" | tr -d '\n' | xargs)
+          CLEAN_TAG=$(echo "${GITHUB_SHA}" | tr -d '\n' | xargs)
           ECR_URI_TAG="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-          CLEAN_URI_TAG=$(echo "${ECR_URI_TAG}" | xargs | tr -d '\n')
+          CLEAN_URI_TAG="${CLEAN_REGISTRY}/${CLEAN_NAME}:${CLEAN_TAG}"
     
           echo "ECR_URI_TAG=${CLEAN_URI_TAG}" >> $GITHUB_OUTPUT
           echo "Set final output: [${CLEAN_URI_TAG}]"
