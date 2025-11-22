@@ -165,7 +165,7 @@ jobs:
           ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
 
           docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${ECR_URI}"
-          IMAGE_DIGEST=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
+          IMAGE_DIGEST=$(docker push "${ECR_URI}" | grep 'digest' | awk '{print $NF}')
           echo "ECR_URI_TAG=${ECR_URI}" >> $GITHUB_ENV
           echo "FULL_IMAGE_DIGEST=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}@${IMAGE_DIGEST}" >> $GITHUB_ENV
 
