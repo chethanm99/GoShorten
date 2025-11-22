@@ -85,7 +85,7 @@ jobs:
             ${{ runner.os }}-go-mod-
 
       - name: Download Go modules (only on cache miss)
-        if: steps.go-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         working-directory: app
         run: |
           echo "Cache missing, downloading go modules"
@@ -130,16 +130,6 @@ jobs:
             --severity CRITICAL,HIGH \
             "${IMAGE_REF}" || true
 
-          /usr/local/bin/trivy image \
-            --format cyclonedx \
-            --output trivy-sbom-cyclonedx.json \
-            "${IMAGE_REF}" || true
-
-          /usr/local/bin/trviy image \
-            --format spdx-json \
-            --output trivy-sbom-spdx.json \
-            "${IMAGE_REF}" || true
-
           if [ -s trivy-results.json ]; then
             if jq -e 'if (.Results | length > 0) then .Results[].Vulnerabilities[] | select(.Severity == "CRITICAL" or .Severity == "HIGH") else empty end' trivy-results.json >/dev/null 2>&1; then
               echo "::error::CRITICAL or HIGH vulnerabilities found. Failing quality gate."
@@ -164,40 +154,29 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Debug ECR Registry output
-        run: |
-          ECR_REGISTRY=$(echo "${{ steps.login-ecr.outputs.registry }}" | tr -d '\n' | xargs)
-          echo "CLEAN_ECR_REGISTRY=${ECR_REGISTRY}" >> $GITHUB_ENV
-          echo "DEBUG: Set CLEAN_ECR_REGISTRY=[${ECR_REGISTRY}] to ENV"
-
       - name: Tag and Push the images to ECR
         id: push_image
         run: |
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
           AWS_REGION="us-east-1"
-          CLEAN_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-          CLEAN_IMAGE_NAME="${{ env.IMAGE_NAME }}"
+          IMAGE_NAME="${{ env.IMAGE_NAME }}"
           IMAGE_TAG="${{ github.sha }}"
 
-          ECR_URI_TAG="${CLEAN_REGISTRY}/${CLEAN_IMAGE_NAME}:${IMAGE_TAG}"
-          if [ -z "$CLEAN_REGISTRY" ]; then
-              echo "::error::ECR Registry URI is empty. Cannot tag image."
-              exit 1
-          fi
+          ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:${IMAGE_TAG}"
 
           docker tag "${IMAGE_NAME}:${IMAGE_TAG}" "${ECR_URI_TAG}"
-          IMAGE_DIGEST_REF=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
-          echo "ECR_URI_TAG_CLEAN=${ECR_URI_TAG}" >> $GITHUB_ENV
-          echo "FULL_IMAGE_DIGEST=${CLEAN_REGISTRY}/${CLEAN_IMAGE_NAME}@${IMAGE_DIGEST_REF}" >> $GITHUB_ENV
+          IMAGE_DIGEST=$(docker push "${ECR_URI_TAG}" | grep 'digest' | awk '{print $NF}')
+          echo "ECR_URI_TAG=${ECR_URI}" >> $GITHUB_ENV
+          echo "FULL_IMAGE_DIGEST=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}@${IMAGE_DIGEST}" >> $GITHUB_ENV
 
       - name: Write ECR URI to artifact file
         id: set_output
         run: |
-          CLEAN_URI_TAG="${ECR_URI_TAG_CLEAN}"
-          echo "${CLEAN_URI_TAG}" > image_uri.txt
+          URI_TAG="${ECR_URI_TAG}"
+          echo "${URI_TAG}" > image_uri.txt
 
-          echo "ECR_URI_TAG=${CLEAN_URI_TAG}" >> $GITHUB_OUTPUT
-          echo "Set final output: [${CLEAN_URI_TAG}]"
+          echo "ECR_URI=${URI_TAG}" >> $GITHUB_OUTPUT
+          echo "Set final output: [${URI_TAG}]"
 
       - name: Upload Image URI Artficat
         uses: actions/upload-artifact@v4
@@ -301,4 +280,4 @@ jobs:
           if [ "$EXIT_CODE" -ne 0 ]; then
             echo "Smoke test container failed with exit code $EXIT_CODE"
             exit 1
-          fi
+          fi  
