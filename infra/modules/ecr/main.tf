@@ -24,7 +24,7 @@ resource "aws_ecr_lifecycle_policy" "app_cleanup_policy"{
                 rulePriority = 1,
                 description = "Keep the latest five images",
                 selection = {
-                    tagStatus = "any"
+                    tagStatus = "untagged"
                     countType = "imageCountMoreThan"
                     countNumber = 5
                 },
@@ -36,7 +36,8 @@ resource "aws_ecr_lifecycle_policy" "app_cleanup_policy"{
                 rulePriority = 2,
                 description = "Delete images older than 14 days",
                 selection = {
-                    tagStatus = "any"
+                    tagStatus = "tagged"
+                    tagPrefixList = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                     countType = "sinceImagePushed"
                     countUnit = "days"
                     countNumber = 14
