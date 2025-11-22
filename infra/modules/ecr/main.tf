@@ -15,7 +15,7 @@ resource "aws_ecr_repository" "url-app-repo"{
     )
 }
 
-resource "aws_ecr_lifecyle_policy" "app_cleanup_policy"{
+resource "aws_ecr_lifecycle_policy" "app_cleanup_policy"{
     repository = aws_ecr_repository.url-app-repo.name
 
     policy = jsonencode({
