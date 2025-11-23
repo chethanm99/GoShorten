@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  IMAGE_NAME: go-url-shortner
+  IMAGE_NAME: go-urls-shortner
 
 permissions:
   contents: read
