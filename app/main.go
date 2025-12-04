@@ -38,11 +38,16 @@ func main() {
 		port = ":8080"
 	}
 
+	listenAddr := port
+	if listenAddr[0] == ':' {
+		listenAddr = "0.0.0.0" + listenAddr
+	}
+
 	app := fiber.New()
 	app.Use(logger.New())
 	app.Use(recovermw.New())
 
 	setupRoutes(app)
 
-	log.Fatal(app.Listen(port))
+	log.Fatal(app.Listen(listenAddr))
 }
